@@ -1,25 +1,46 @@
 ### A Pluto.jl notebook ###
-# v0.20.13
+# v0.20.10
 
 using Markdown
 using InteractiveUtils
 
 # ╔═╡ 67f81ce2-76e4-11f0-208c-ebbd908ac23f
-using Plots, DifferentialEquations
+using Plots, LinearAlgebra, DifferentialEquations
 
 # ╔═╡ 07d5796e-b609-4b0f-87a4-67c8ef6af51c
-# fixed curvature linear decreasing lope between βmax and βmin
+# curvatura fija con radio R, pendiente decreciente entre βmax y βmin
+# x = R cosθ, y = R sinθ, z = a(θ) * θ
+# a(θ) = amin + k*θ, with k = (amax-amin)/(nturns*2π)
 begin
+	R = 5.0
 	amax = 1.4
 	amin = 0.4
 	nturns = 3
-	θ = 0:pi/20:nturns*2*pi
-	R = 5.0
-	x = R*cos.(θ)
-	y = R*sin.(θ)
-	a = amin .+ θ*(amax-amin)/(nturns*2*pi)
-	z = a.*θ
+	nturns = 3
+	θspan  = (0.0, 2π*nturns)
+	k = (amax - amin) / (2π*nturns)          
+	a(θ) = amin + k*θ
+	z(θ) = a(θ)*θ                            
+	dz_dθ(θ) = amin + 2k*θ
 end	
+
+# ╔═╡ ffe56812-9570-4fb9-bfa1-0d680a143f2c
+begin
+	# Curva y derivadas
+	r(θ)   = SVector(R*cos(θ), R*sin(θ), z(θ))     # use StaticArrays if you prefer
+	rp(θ)  = SVector(-R*sin(θ), R*cos(θ), dz_dθ(θ))
+	rpp(θ) = SVector(-R*cos(θ), -R*sin(θ), 2k)
+end
+
+# ╔═╡ b8d53544-4a78-414e-956b-8568e0501a85
+# Frenet frame
+begin
+	sθ(θ) = norm(rp(θ))                      
+	Tθ(θ) = rp(θ) / sθ(θ)                  # tangent
+	Bθ(θ) = normalize(cross(rp(θ), rpp(θ)))    # binormal
+	Nθ(θ) = normalize(cross(Bθ(θ), Tθ(θ)))     # normal (right-handed)
+	κθ(θ) = norm(cross(rp(θ), rpp(θ))) / sθ(θ)^3
+end
 
 # ╔═╡ 94a8fc32-2cf7-44f7-ba60-27c25d1938a4
 begin
@@ -71,6 +92,7 @@ end
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 
 [compat]
@@ -84,7 +106,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.11.4"
 manifest_format = "2.0"
-project_hash = "f540b594dbe22ba8a885f2dbc8c91147792260d2"
+project_hash = "0de480cc8e4c64404a81656f127f4e5aa27608bd"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "be7ae030256b8ef14a441726c4c37766b90b93a3"
@@ -2668,6 +2690,8 @@ version = "1.9.2+0"
 # ╔═╡ Cell order:
 # ╠═67f81ce2-76e4-11f0-208c-ebbd908ac23f
 # ╠═07d5796e-b609-4b0f-87a4-67c8ef6af51c
+# ╠═ffe56812-9570-4fb9-bfa1-0d680a143f2c
+# ╠═b8d53544-4a78-414e-956b-8568e0501a85
 # ╠═94a8fc32-2cf7-44f7-ba60-27c25d1938a4
 # ╠═381b5df5-fae8-4459-b565-bd00aad2f0aa
 # ╠═552159dc-4302-41e3-8081-808e548ea5f2
